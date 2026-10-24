@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>แบบประเมิน Braden Score</title>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+:root{
+  --bg:#f4f6f9; --card:#fff; --ink:#1d2939; --muted:#667085; --line:#e4e7ec;
+  --brand:#06a64f; --red:#e5484d; --yellow:#f5b700; --green:#12b76a;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:"Sarabun","Noto Sans Thai",system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.5}
+header{position:sticky;top:0;z-index:5;background:var(--brand);color:#fff;display:flex;align-items:center;gap:8px;
+  padding:14px 16px;padding-top:calc(14px + env(safe-area-inset-top,0px))}
+header h1{font-size:18px;margin:0;flex:1}
+header .back{background:none;border:0;color:#fff;font-size:15px;padding:6px 4px;cursor:pointer;visibility:hidden}
+header .back.show{visibility:visible}
+main{max-width:640px;margin:0 auto;padding:16px;padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))}
+.view{display:none}.view.active{display:block}
+.card{background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 1px 2px rgba(16,24,40,.06)}
+.card h2{font-size:16px;margin:0 0 10px}
+.menu-btn{display:flex;align-items:center;gap:12px;width:100%;padding:20px;margin-bottom:12px;border:0;border-radius:14px;
+  background:var(--card);box-shadow:0 1px 2px rgba(16,24,40,.06);font-size:17px;color:var(--ink);text-align:left;cursor:pointer;font-family:inherit}
+.menu-btn small{display:block;color:var(--muted);font-size:13px}
+.menu-icon{width:44px;height:44px;border-radius:12px;background:#e6f7ee;display:grid;place-items:center;font-size:22px;flex-shrink:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{display:block;font-size:14px;color:var(--muted);margin:10px 0 4px}
+label:first-child{margin-top:0}
+input,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:#fff;color:var(--ink);font-family:inherit}
+.req::after{content:" *";color:var(--red)}
+.score-row{margin-bottom:6px}
+.result{text-align:center;padding:14px;border-radius:12px;background:#f9fafb;border:1px dashed var(--line)}
+.result .big{font-size:28px;font-weight:700}
+.risk-pill{display:inline-block;padding:4px 14px;border-radius:999px;font-weight:600;color:#fff;margin-top:6px}
+.check-item{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px;color:var(--ink);margin:0;cursor:pointer}
+.check-item:last-child{border-bottom:0}
+.check-item input{width:20px;height:20px;margin:2px 0 0;padding:0;flex-shrink:0;accent-color:var(--brand)}
+.wound-block{border:1.5px solid #f3b4b6;background:#fff5f5;border-radius:12px;padding:10px 12px;margin:8px 0}
+.wound-title{font-size:14px;font-weight:700;color:#b42318;margin-bottom:2px}
+.sub-item{padding-left:8px}
+.care-info{margin:4px 0 8px 36px;padding:10px;background:#fff;border-left:3px solid var(--yellow);border-radius:8px;font-size:14px;color:var(--ink)}
+.dressing-input{margin:6px 0 4px 36px;width:calc(100% - 36px)}
+.progress{display:flex;justify-content:space-between;font-size:14px;color:var(--muted);margin-top:10px}
+.bar{height:8px;background:var(--line);border-radius:999px;overflow:hidden;margin-top:6px}
+.bar>div{height:100%;background:var(--brand);transition:width .2s}
+.fixed-bottom{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);
+  padding:12px 16px;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+.fixed-bottom button{width:100%;max-width:640px;margin:0 auto;display:block}
+.btn{padding:14px;border:0;border-radius:12px;background:var(--brand);color:#fff;font-size:17px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn:disabled{background:#c4cad3;cursor:not-allowed}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:10px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{color:var(--muted);font-weight:600;font-size:13px}
+td.num,th.num{text-align:center}
+.badge{display:inline-block;min-width:58px;text-align:center;padding:4px 8px;border-radius:999px;color:#fff;font-weight:600;font-size:13px}
+.b-red{background:var(--red)}.b-yellow{background:var(--yellow);color:#1d2939}.b-green{background:var(--green)}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-bottom:10px}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.lg-red::before{background:var(--red)}.lg-yellow::before{background:var(--yellow)}.lg-green::before{background:var(--green)}
+.empty{text-align:center;color:var(--muted);padding:30px 0}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#1d2939;color:#fff;padding:10px 16px;border-radius:10px;
+  font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%;text-align:center;z-index:10}
+#toast.show{opacity:1}
+.loading{text-align:center;color:var(--muted);padding:24px}
+</style>
+</head>
+<body>
+
+<header>
+  <button class="back" id="btnBack" onclick="showView('home')">‹ กลับ</button>
+  <h1 id="title">แบบประเมิน Braden Score</h1>
+</header>
+
+<main>
+  <!-- HOME -->
+  <section class="view active" id="view-home">
+    <div class="card" style="margin-top:4px">
+      <h2>เมนูหลัก</h2>
+      <button class="menu-btn" onclick="openForm()">
+        <span class="menu-icon">📝</span>
+        <span>แบบประเมิน Braden score<small>ประเมินความเสี่ยงแผลกดทับ และบันทึกการพยาบาล</small></span>
+      </button>
+      <button class="menu-btn" onclick="openDashboard()">
+        <span class="menu-icon">📊</span>
+        <span>ข้อมูลรวม / Dashboard<small>สรุปรายชื่อผู้ป่วยและเปอร์เซ็นต์การพยาบาล</small></span>
+      </button>
+    </div>
+  </section>
+
+  <!-- FORM -->
+  <section class="view" id="view-form">
+    <div class="card">
+      <h2>ส่วนที่ 1 ข้อมูลผู้ป่วย</h2>
+      <label class="req">ชื่อ-สกุล</label>
+      <input id="f-name" placeholder="เช่น สมหญิง ใจดี">
+      <div class="grid2">
+        <div>
+          <label class="req">HN</label>
+          <input id="f-hn" inputmode="numeric">
+        </div>
+        <div>
+          <label>AN</label>
+          <input id="f-an" inputmode="numeric">
+        </div>
+      </div>
+      <label>อายุ (ปี)</label>
+      <input id="f-age" inputmode="numeric">
+      <div class="grid2">
+        <div>
+          <label class="req">ผู้ประเมิน</label>
+          <input id="f-assessor">
+        </div>
+        <div>
+          <label>ผู้ตรวจสอบ</label>
+          <input id="f-verifier">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>ส่วนที่ 2 ผลการประเมินความเสี่ยง (Braden)</h2>
+      <div id="scales"></div>
+      <div class="result" style="margin-top:12px">
+        <div id="scoreText" class="big">-</div>
+        <div id="riskBox"></div>
+      </div>
+    </div>
+
+    <div class="card" id="nursingCard" style="display:none">
+      <h2 id="nursingTitle">ส่วนที่ 3 การพยาบาล</h2>
+      <div id="checklist"></div>
+      <div class="progress"><span id="progText">0 / 0 ข้อ</span><span id="pctText">0%</span></div>
+      <div class="bar"><div id="pctBar" style="width:0%"></div></div>
+    </div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section class="view" id="view-dash">
+    <div class="card">
+      <h2>สรุปการพยาบาล Braden Score</h2>
+      <div class="legend">
+        <span class="lg-red">0–30%</span>
+        <span class="lg-yellow">31–70%</span>
+        <span class="lg-green">71–100%</span>
+      </div>
+      <div id="dashBody"><div class="loading">กำลังโหลดข้อมูล...</div></div>
+    </div>
+  </section>
+</main>
+
+<div class="fixed-bottom" id="bottomBar" style="display:none">
+  <button class="btn" id="btnSave" onclick="saveRecord()" disabled>บันทึก</button>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ===================== CONFIG ===================== */
+const CONFIG = {
+  LIFF_ID: '2012189191-L4HJm8XC',
+  API_URL: 'https://script.google.com/macros/s/AKfycbx-wXCv8JzTVN2DsBMjwm4rcvpKxp_pKQursrb6nDrsVJl92PO7G30LLLFEu1dAiRJt/exec'
+};
+
+/* ===================== DATA ===================== */
+const SCALES = [
+  { key:'sensory', label:'1. การรับความรู้สึก (Sensory perception)', opts:['ถูกจำกัดโดยสมบูรณ์','จำกัดมาก','จำกัดเล็กน้อย','ไม่มีปัญหา'] },
+  { key:'moisture', label:'2. ความชื้นของผิวหนัง (Moisture)', opts:['เปียกชื้นตลอดเวลา','เปียกชื้นบ่อย','เปียกชื้นเป็นครั้งคราว','แห้งปกติ'] },
+  { key:'activity', label:'3. การทำกิจกรรม (Activity)', opts:['อยู่บนเตียงตลอดเวลา','ถูกจำกัดอยู่บนเก้าอี้','เดินได้เป็นครั้งคราว','เดินได้บ่อย'] },
+  { key:'mobility', label:'4. การเคลื่อนไหวของร่างกาย (Mobility)', opts:['เคลื่อนไหวไม่ได้เลย','มีข้อจำกัดมาก','มีข้อจำกัดเล็กน้อย','ไม่มีข้อจำกัด'] },
+  { key:'nutrition', label:'5. ภาวะโภชนาการ (Nutrition)', opts:['ทุพโภชนาการ','น่าจะไม่เพียงพอ','เพียงพอ','ดีเยี่ยม'] },
+  { key:'friction', label:'6. แรงเสียดสีและแรงเฉือน (Friction & shear)', opts:['มีปัญหา','มีปัญหาบางส่วน','ไม่มีปัญหาที่เด่นชัด'] }
+];
+
+const LEVELS = {
+  none: { label:'ไม่เสี่ยง', color:'#12b76a', min:19, max:23 },
+  low:  { label:'ต่ำ',      color:'#f5b700', min:15, max:18 },
+  mid:  { label:'กลาง',     color:'#f97316', min:13, max:14 },
+  high: { label:'สูง',      color:'#e5484d', min:6,  max:12 }
+};
+
+// ข้อการพยาบาลตามเอกสารแนวปฏิบัติ (ยกเว้นส่วนแผลซึ่งแยกเป็นบล็อก "มีแผล/ไม่มีแผล")
+const BASE = [
+  'ประเมินลักษณะผิวหนังและบริเวณปุ่มกระดูกทุกวัน',
+  'ส่งต่อข้อมูลความเสี่ยงในการรับ-ส่งเวร',
+  'ดูแลผิวหนังให้แห้งสะอาด ไม่เปียกจากเหงื่อ',
+  'อาบน้ำ/เช็ดตัวด้วยน้ำธรรมดา หลีกเลี่ยงน้ำอุ่นในรายที่ผิวแห้ง',
+  'ใช้ผลิตภัณฑ์อาบน้ำที่ไม่ระคายเคือง และซับให้แห้งทุกครั้ง',
+  'ทาวาสลีนเพื่อป้องกันผิวแห้งแตก',
+  'พลิกตัวผู้ป่วยทุก 2 ชั่วโมง'
+];
+const LOW_EXTRA = [
+  'รักษาความสะอาดและแห้งของผิวหนัง',
+  'ปรับท่านอนและเลือกที่นอนกระจายแรงกด',
+  'ใช้ผ้าขวางเตียงช่วยยก/เลื่อนตัวผู้ป่วยทุกครั้ง',
+  'ใช้ Pat-slide ทุกครั้งเมื่อเคลื่อนย้ายผู้ป่วย',
+  'ดูแลผ้าปูที่นอนให้สะอาด เรียบตึงเสมอ'
+];
+const MID_EXTRA = [
+  'ทา Zinc paste ผสมวาสลีน (1:1) บางๆ บริเวณรอยแดง หรือใช้ skin barrier product บริเวณรอยถลอก'
+];
+const HIGH_EXTRA = [
+  'ทำความสะอาดด้วย 0.9% NSS (ห้ามขัดถู) หรือ skin cleanser และซับให้แห้ง'
+];
+
+// ข้อมูลการทำแผลตาม grade (แสดงเป็นข้อมูลอ้างอิง ไม่นับในเปอร์เซ็นต์)
+const WOUND_GRADES = [
+  { id:'g1', label:'Grade 1', care:'ใช้วาสลีนเคลือบผิวหนังที่เป็นรอยแดง หลีกเลี่ยงการขัดถูเด็ดขาด' },
+  { id:'g2', label:'Grade 2', care:'ล้างทำความสะอาดแผลด้วย 0.9% NSS และเลือกใช้อุปกรณ์ปิดแผลที่เหมาะสม เช่น วัสดุปิดแผลชนิดแผ่นตาข่ายเคลือบสารให้ความชุ่มชื้น' },
+  { id:'g3', label:'Grade 3', care:'ใช้สำลีชุบ 0.9% NSS ล้างแผล และทา Zinc paste ผสมวาสลีน (1:1) บางๆ หรือใช้ skin barrier product' },
+  { id:'g4', label:'Grade 4', care:'แผลตื้น: ล้างด้วย 0.9% NSS | แผลลึก มีโพรงและติดเชื้อ: ล้างด้วย NSS irrigate ด้วยกระบอกฉีดยา 10–20 ml จนน้ำล้างใส ใส่ Silver sulfadiazine หรือ Bactroban ointment แล้วปิดด้วย gauze | มีไข้ หนอง เนื้อตายกลิ่นเหม็น หรือแผลขยาย ให้รายงานแพทย์' }
+];
+
+// สร้างรายการของแต่ละระดับ โดยแทรกบล็อกแผลที่ตำแหน่ง woundPos (-1 = ท้ายสุด)
+function build(texts, woundPos) {
+  const arr = [];
+  texts.forEach((t, i) => {
+    if (i === woundPos) arr.push({ type:'wound' });
+    arr.push({ type:'text', text:t });
+  });
+  if (woundPos === -1 || woundPos >= texts.length) arr.push({ type:'wound' });
+  return arr.map((it, i) => ({ ...it, key: it.type === 'wound' ? 'wound' : 'k' + i }));
+}
+
+const LEVEL_ITEMS = {
+  none: build([
+    'ประเมินแผลและลักษณะผิวหนังทุกวัน',
+    'อาบน้ำ / เช็ดตัวด้วยน้ำธรรมดา ซับให้แห้ง',
+    'พลิกตะแคงตัวผู้ป่วยทุก 2 ชั่วโมง',
+    'จัดท่าและรองรับด้วยหมอนให้ถูกต้อง'
+  ], 3),
+  low:  build([...BASE, ...LOW_EXTRA], -1),
+  mid:  build([...BASE, ...LOW_EXTRA, ...MID_EXTRA], -1),
+  high: build([...BASE, ...LOW_EXTRA, ...MID_EXTRA, ...HIGH_EXTRA], -1)
+};
+
+/* ===================== STATE ===================== */
+let userId = '';
+let checked = new Set();        // key ของรายการข้อความที่ติ๊ก
+let currentLevel = null;
+let woundStatus = null;         // null | 'has' | 'none'
+let woundGrades = new Set();    // id ของ grade ที่เลือก
+let dressingOn = false;
+let dressingText = '';
+
+/* ===================== HELPERS ===================== */
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  $('view-' + name).classList.add('active');
+  const titles = { home:'แบบประเมิน Braden Score', form:'แบบประเมิน Braden Score', dash:'ข้อมูลรวม / Dashboard' };
+  $('title').textContent = titles[name];
+  $('btnBack').classList.toggle('show', name !== 'home');
+  $('bottomBar').style.display = name === 'form' ? 'block' : 'none';
+  window.scrollTo(0, 0);
+  if (name === 'dash') loadDashboard();
+  if (name === 'home') resetForm();
+}
+
+function levelOf(score) {
+  for (const k of Object.keys(LEVELS)) {
+    if (score >= LEVELS[k].min && score <= LEVELS[k].max) return k;
+  }
+  return null;
+}
+
+function percentClass(p) {
+  if (p <= 30) return 'b-red';
+  if (p <= 70) return 'b-yellow';
+  return 'b-green';
+}
+
+/* ===================== LIFF ===================== */
+async function initLiff() {
+  try {
+    await liff.init({ liffId: CONFIG.LIFF_ID });
+    if (!liff.isLoggedIn()) { liff.login(); return; }
+    const profile = await liff.getProfile();
+    userId = profile.userId;
+  } catch (e) {
+    console.error(e);
+    toast('เชื่อมต่อ LINE ไม่สำเร็จ');
+  }
+}
+
+/* ===================== FORM: SCORES ===================== */
+function buildForm() {
+  $('scales').innerHTML = SCALES.map(s => `
+    <div class="score-row">
+      <label class="req">${esc(s.label)}</label>
+      <select id="s-${s.key}" onchange="onScoreChange()">
+        <option value="">-- เลือก --</option>
+        ${s.opts.map((o, i) => `<option value="${i + 1}">${i + 1} : ${esc(o)}</option>`).join('')}
+      </select>
+    </div>`).join('');
+}
+
+function getScores() {
+  const out = {};
+  for (const s of SCALES) {
+    const v = $('s-' + s.key).value;
+    if (v === '') return null;
+    out[s.key] = Number(v);
+  }
+  return out;
+}
+
+function resetWound() {
+  woundStatus = null;
+  woundGrades.clear();
+  dressingOn = false;
+  dressingText = '';
+}
+
+function onScoreChange() {
+  const scores = getScores();
+  if (!scores) {
+    const filled = SCALES.filter(s => $('s-' + s.key).value !== '').length;
+    $('scoreText').textContent = `เลือกแล้ว ${filled}/6 ข้อ`;
+    $('riskBox').innerHTML = '';
+    $('nursingCard').style.display = 'none';
+    currentLevel = null;
+    checked.clear();
+    resetWound();
+    updateSave();
+    return;
+  }
+  const total = Object.values(scores).reduce((a, b) => a + b, 0);
+  const lvl = levelOf(total);
+  if (lvl !== currentLevel) {
+    checked.clear();
+    resetWound();
+    currentLevel = lvl;
+  }
+  $('scoreText').textContent = `คะแนนรวม ${total} / 23`;
+  $('riskBox').innerHTML = `<span class="risk-pill" style="background:${LEVELS[lvl].color}">ความเสี่ยง: ${LEVELS[lvl].label}</span>`;
+  $('nursingCard').style.display = 'block';
+  $('nursingTitle').textContent = `ส่วนที่ 3 การพยาบาล (ความเสี่ยง${LEVELS[lvl].label})`;
+  renderChecklist();
+  updateSave();
+}
+
+/* ===================== FORM: NURSING CHECKLIST ===================== */
+function renderChecklist() {
+  $('checklist').innerHTML = LEVEL_ITEMS[currentLevel].map(it =>
+    it.type === 'wound' ? woundHTML() : itemHTML(it)
+  ).join('');
+  updatePercent();
+}
+
+function itemHTML(it) {
+  return `<label class="check-item">
+    <input type="checkbox" ${checked.has(it.key) ? 'checked' : ''} onchange="onItemCheck('${it.key}', this.checked)">
+    <span>${esc(it.text)}</span>
+  </label>`;
+}
+
+function woundHTML() {
+  let h = `<div class="wound-block"><div class="wound-title">การตรวจแผลกดทับ</div>`;
+
+  // "ไม่มีแผล" จะซ่อนเมื่อเลือก "มีแผล" แล้ว
+  if (woundStatus !== 'has') {
+    h += `<label class="check-item">
+      <input type="checkbox" ${woundStatus === 'none' ? 'checked' : ''} onchange="onWoundNone(this.checked)">
+      <span>ไม่มีแผล</span>
+    </label>`;
+  }
+
+  h += `<label class="check-item">
+    <input type="checkbox" ${woundStatus === 'has' ? 'checked' : ''} onchange="onWoundHas(this.checked)">
+    <span><b>มีแผล</b></span>
+  </label>`;
+
+  if (woundStatus === 'has') {
+    h += `<div>`;
+    WOUND_GRADES.forEach(g => {
+      const on = woundGrades.has(g.id);
+      h += `<label class="check-item sub-item">
+        <input type="checkbox" ${on ? 'checked' : ''} onchange="onGrade('${g.id}', this.checked)">
+        <span>${esc(g.label)}</span>
+      </label>`;
+      if (on) h += `<div class="care-info">${esc(g.care)}</div>`;
+    });
+    h += `<label class="check-item sub-item">
+      <input type="checkbox" ${dressingOn ? 'checked' : ''} onchange="onDressing(this.checked)">
+      <span>ทำแผลด้วย</span>
+    </label>`;
+    if (dressingOn) {
+      h += `<input class="dressing-input" id="dressingText" value="${esc(dressingText)}" placeholder="ระบุยา/วัสดุที่ใช้" oninput="dressingText=this.value">`;
+    }
+    h += `</div>`;
+  }
+
+  return h + `</div>`;
+}
+
+function onItemCheck(key, on) {
+  on ? checked.add(key) : checked.delete(key);
+  updatePercent();
+  updateSave();
+}
+
+function onWoundHas(on) {
+  if (on) {
+    woundStatus = 'has';
+  } else {
+    resetWound();
+  }
+  renderChecklist();
+  updateSave();
+}
+
+function onWoundNone(on) {
+  resetWound();
+  if (on) woundStatus = 'none';
+  renderChecklist();
+  updateSave();
+}
+
+function onGrade(id, on) {
+  on ? woundGrades.add(id) : woundGrades.delete(id);
+  renderChecklist();
+}
+
+function onDressing(on) {
+  dressingOn = on;
+  if (!on) dressingText = '';
+  renderChecklist();
+}
+
+function countDone() {
+  const items = LEVEL_ITEMS[currentLevel];
+  let n = 0;
+  items.forEach(it => {
+    if (it.type === 'wound') { if (woundStatus) n++; }
+    else if (checked.has(it.key)) n++;
+  });
+  return { total: items.length, count: n, pct: Math.round((n / items.length) * 100) };
+}
+
+function updatePercent() {
+  if (!currentLevel) return;
+  const { total, count, pct } = countDone();
+  $('progText').textContent = `${count} / ${total} ข้อ`;
+  $('pctText').textContent = pct + '%';
+  $('pctBar').style.width = pct + '%';
+  $('pctBar').style.background = LEVELS[currentLevel].color;
+}
+
+function updateSave() {
+  const ok = getScores() && $('f-name').value.trim() && $('f-hn').value.trim() && $('f-assessor').value.trim();
+  $('btnSave').disabled = !ok;
+}
+
+/* ===================== SAVE ===================== */
+async function saveRecord() {
+  const scores = getScores();
+  const name = $('f-name').value.trim();
+  const hn = $('f-hn').value.trim();
+  if (!scores || !name || !hn) return toast('กรุณากรอกข้อมูลให้ครบ');
+
+  const total = Object.values(scores).reduce((a, b) => a + b, 0);
+  const { total: nTotal, count, pct } = countDone();
+
+  const checkedItems = LEVEL_ITEMS[currentLevel]
+    .filter(it => it.type === 'text' && checked.has(it.key))
+    .map(it => it.text);
+
+  const payload = {
+    userId,
+    hn, an: $('f-an').value.trim(), name,
+    age: $('f-age').value.trim(),
+    assessor: $('f-assessor').value.trim(),
+    verifier: $('f-verifier').value.trim(),
+    scores,
+    bradenScore: total,
+    riskLevel: LEVELS[currentLevel].label,
+    checkedCount: count,
+    totalCount: nTotal,
+    percent: pct,
+    checkedItems,
+    wound: {
+      status: woundStatus === 'has' ? 'มีแผล' : woundStatus === 'none' ? 'ไม่มีแผล' : '',
+      grades: WOUND_GRADES.filter(g => woundGrades.has(g.id)).map(g => g.label),
+      dressing: dressingOn ? dressingText.trim() : ''
+    }
+  };
+
+  const btn = $('btnSave');
+  btn.disabled = true;
+  btn.textContent = 'กำลังบันทึก...';
+  try {
+    const res = await fetch(CONFIG.API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'บันทึกไม่สำเร็จ');
+    toast('บันทึกเรียบร้อย');
+    showView('home');
+  } catch (e) {
+    console.error(e);
+    toast('บันทึกไม่สำเร็จ: ' + e.message);
+  } finally {
+    btn.textContent = 'บันทึก';
+    updateSave();
+  }
+}
+
+/* ===================== NAV / RESET ===================== */
+function resetForm() {
+  ['f-name','f-hn','f-an','f-age','f-assessor','f-verifier'].forEach(id => $(id).value = '');
+  SCALES.forEach(s => $('s-' + s.key).value = '');
+  checked.clear();
+  resetWound();
+  currentLevel = null;
+  $('nursingCard').style.display = 'none';
+  $('scoreText').textContent = '-';
+  $('riskBox').innerHTML = '';
+  updateSave();
+}
+
+function openForm() {
+  showView('form');
+  ['f-name','f-hn','f-assessor'].forEach(id => $(id).addEventListener('input', updateSave));
+}
+
+function openDashboard() {
+  showView('dash');
+}
+
+/* ===================== DASHBOARD ===================== */
+async function loadDashboard() {
+  $('dashBody').innerHTML = '<div class="loading">กำลังโหลดข้อมูล...</div>';
+  try {
+    const res = await fetch(CONFIG.API_URL + '?action=summary');
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    renderDashboard(data.rows);
+  } catch (e) {
+    console.error(e);
+    $('dashBody').innerHTML = '<div class="empty">โหลดข้อมูลไม่สำเร็จ</div>';
+  }
+}
+
+function renderDashboard(rows) {
+  if (!rows.length) {
+    $('dashBody').innerHTML = '<div class="empty">ยังไม่มีข้อมูล</div>';
+    return;
+  }
+  $('dashBody').innerHTML = `
+    <table>
+      <thead><tr>
+        <th class="num">ลำดับ</th><th>ชื่อ-สกุล</th><th>HN</th><th>ความเสี่ยง</th><th class="num">% การพยาบาล</th>
+      </tr></thead>
+      <tbody>
+        ${rows.map((r, i) => `
+          <tr>
+            <td class="num">${i + 1}</td>
+            <td>${esc(r.name)}</td>
+            <td>${esc(r.hn)}</td>
+            <td>${esc(r.riskLevel)}<br><small style="color:var(--muted)">Braden ${esc(r.bradenScore)}</small></td>
+            <td class="num"><span class="badge ${percentClass(Number(r.percent))}">${esc(r.percent)}%</span></td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+/* ===================== INIT ===================== */
+buildForm();
+updateSave();
+initLiff();
+</script>
+</body>
+</html>
